@@ -7,6 +7,8 @@
 
 Linacodec is an audio tokenizer that compresses audio into just 12.5 tokens per second (171 bps) and decodes to 48khz audio.
 
+https://github.com/user-attachments/assets/77094afd-2d5d-490e-b283-9100e74a69a4
+
 ### Key benefits
 * Compression: 12.5 tokens/sec (60x more compressed than DAC).
 * Audio Quality: 48khz output (much clearer then 16khz/24khz which is the standard).
