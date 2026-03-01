@@ -2,6 +2,10 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed in accordance with the terms of the Llama 3 Community License Agreement.
 
+from __future__ import annotations
+
+from typing import List, Optional, Tuple, Union
+
 
 import torch
 import torch.nn.functional as F
@@ -51,7 +55,7 @@ class Attention(nn.Module):
         dim: int,
         n_heads: int,
         dropout: float,
-        window_size: int | None,
+        window_size: Optional[int],
         qkv_bias: bool = False,
         proj_bias: bool = False,
         use_flash_attention: bool = False,
@@ -80,8 +84,8 @@ class Attention(nn.Module):
         self.causal = causal
 
     def create_mask(
-        self, bsz: int, seqlen: int, mask: torch.Tensor | None, device: torch.device
-    ) -> torch.Tensor | None:
+        self, bsz: int, seqlen: int, mask: Optional[torch.Tensor], device: torch.device
+    ) -> Optional[torch.Tensor]:
         """Create attention mask combining provided mask and local attention constraints"""
         if not self.use_local_attention and mask is None:
             return None
@@ -118,10 +122,10 @@ class Attention(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        freqs_cis: torch.Tensor | None,
-        mask: torch.Tensor | None,
+        freqs_cis: Optional[torch.Tensor],
+        mask: Optional[torch.Tensor],
         return_kv: bool = False,
-    ) -> torch.Tensor | tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]]:
         """Forward pass for multi-head attention.
         Args:
             x (torch.Tensor): Input tensor of shape (bsz, seqlen, dim).
@@ -182,10 +186,10 @@ class Attention(nn.Module):
     def forward_with_cache(
         self,
         x: torch.Tensor,
-        kv_cache: tuple[torch.Tensor, torch.Tensor],
+        kv_cache: Tuple[torch.Tensor, torch.Tensor],
         freqs_cis: torch.Tensor,
         start_pos: int,
-    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
         Forward pass with KV cache for efficient inference. Only used for inference.
 
@@ -247,7 +251,7 @@ class FeedForward(nn.Module):
         dim: int,
         hidden_dim: int,
         multiple_of: int,
-        ffn_dim_multiplier: float | None,
+        ffn_dim_multiplier: Optional[float],
     ):
         super().__init__()
         hidden_dim = int(2 * hidden_dim / 3)
@@ -271,12 +275,12 @@ class TransformerBlock(nn.Module):
         n_heads: int,
         qkv_bias: bool,
         proj_bias: bool,
-        window_size: int | None,
+        window_size: Optional[int],
         multiple_of: int,
-        ffn_dim_multiplier: float | None,
+        ffn_dim_multiplier: Optional[float],
         dropout: float,
         norm_eps: float,
-        adanorm_condition_dim: int | None = None,
+        adanorm_condition_dim: Optional[int] = None,
         use_flash_attention: bool = False,
         use_adaln_zero: bool = False,
         causal: bool = False,
@@ -313,13 +317,13 @@ class TransformerBlock(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        freqs_cis: torch.Tensor | None,
-        mask: torch.Tensor | None,
-        condition: torch.Tensor | None = None,
+        freqs_cis: Optional[torch.Tensor],
+        mask: Optional[torch.Tensor],
+        condition: Optional[torch.Tensor] = None,
         return_kv: bool = False,
-        kv_cache: tuple[torch.Tensor, torch.Tensor] | None = None,
-        start_pos: int | None = None,
-    ) -> torch.Tensor | tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        start_pos: Optional[int] = None,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]]:
         """
         Forward pass for a single Transformer block.
         Args:
@@ -386,17 +390,17 @@ class Transformer(nn.Module):
         n_heads: int = 32,
         qkv_bias: bool = False,
         proj_bias: bool = False,
-        window_size: int | None = None,
+        window_size: Optional[int] = None,
         multiple_of: int = 256,
-        ffn_dim_multiplier: float | None = None,
+        ffn_dim_multiplier: Optional[float] = None,
         dropout: float = 0.1,
         norm_eps: float = 1e-5,
         use_rope: bool = True,
         rope_theta: float = 500000.0,
         max_seq_len: int = 2048,
-        input_dim: int | None = None,
-        output_dim: int | None = None,
-        adanorm_condition_dim: int | None = None,
+        input_dim: Optional[int] = None,
+        output_dim: Optional[int] = None,
+        adanorm_condition_dim: Optional[int] = None,
         use_flash_attention: bool = False,
         use_adaln_zero: bool = False,
         use_xavier_init: bool = True,
@@ -480,12 +484,12 @@ class Transformer(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        mask: torch.Tensor | None = None,
-        condition: torch.Tensor | None = None,
+        mask: Optional[torch.Tensor] = None,
+        condition: Optional[torch.Tensor] = None,
         return_kv: bool = False,
-        kv_cache: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
-        start_pos: int | None = None,
-    ) -> torch.Tensor | tuple[torch.Tensor, list[tuple[torch.Tensor, torch.Tensor]]]:
+        kv_cache: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
+        start_pos: Optional[int] = None,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List[Tuple[torch.Tensor, torch.Tensor]]]]:
         """
         Forward pass for the Transformer model.
         Args:

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import math
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 
 import jsonargparse
 import torch
@@ -20,8 +23,8 @@ logger = get_logger()
 @dataclass
 class LinaCodecConfig:
     # SSL Feature settings
-    local_ssl_layers: tuple[int, ...] = (6, 9)  # Indices of SSL layers for local branch
-    global_ssl_layers: tuple[int, ...] = (1, 2)  # Indices of SSL layers for global branch
+    local_ssl_layers: Tuple[int, ...] = (6, 9)  # Indices of SSL layers for local branch
+    global_ssl_layers: Tuple[int, ...] = (1, 2)  # Indices of SSL layers for global branch
     normalize_ssl_features: bool = True  # Whether to normalize local SSL features before encoding
 
     # Down/up-sampling settings
@@ -41,9 +44,9 @@ class LinaCodecConfig:
 
 @dataclass
 class LinaCodecFeatures:
-    content_embedding: torch.Tensor | None = None  # (seq_len, dim)
-    content_token_indices: torch.Tensor | None = None  # (seq_len,)
-    global_embedding: torch.Tensor | None = None  # (dim,)
+    content_embedding: Optional[torch.Tensor] = None  # (seq_len, dim)
+    content_token_indices: Optional[torch.Tensor] = None  # (seq_len,)
+    global_embedding: Optional[torch.Tensor] = None  # (dim,)
 
 
 class LinaCodecModel(nn.Module):
@@ -55,7 +58,7 @@ class LinaCodecModel(nn.Module):
         ssl_feature_extractor: SSLFeatureExtractor,
         local_encoder: Transformer,
         local_quantizer: FiniteScalarQuantizer,
-        feature_decoder: Transformer | None,
+        feature_decoder: Optional[Transformer],
         global_encoder: GlobalEncoder,
         mel_prenet: Transformer,
         mel_decoder: Transformer,
@@ -110,7 +113,7 @@ class LinaCodecModel(nn.Module):
         config: LinaCodecConfig,
         local_encoder: Transformer,
         local_quantizer: FiniteScalarQuantizer,
-        feature_decoder: Transformer | None,
+        feature_decoder: Optional[Transformer],
     ):
         """Initialize local branch components (encoder, downsampling, quantizer, decoder)."""
         self.local_encoder = local_encoder
@@ -199,7 +202,7 @@ class LinaCodecModel(nn.Module):
         else:
             return (audio_length - self.config.n_fft) // self.config.hop_length + 1
 
-    def _process_ssl_features(self, features: list[torch.Tensor], layers: list[int]) -> torch.Tensor:
+    def _process_ssl_features(self, features: List[torch.Tensor], layers: List[int]) -> torch.Tensor:
         if len(layers) > 1:
             # Get features from multiple layers and average them
             selected_features = [features[i - 1] for i in layers]
@@ -219,8 +222,8 @@ class LinaCodecModel(nn.Module):
         return (features - mean) / (std + eps)
 
     def forward_ssl_features(
-        self, waveform: torch.Tensor, padding: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self, waveform: torch.Tensor, padding: Optional[int] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Forward pass to extract SSL features. (B, T, C)
         Args:
             waveform: Input waveform tensor of shape (B, channels, samples)
@@ -252,7 +255,7 @@ class LinaCodecModel(nn.Module):
 
     def forward_content(
         self, local_ssl_features: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] | None:
+    ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor], torch.Tensor]:
         """Forward pass to extract content embeddings from the local branch.
         Args:
             local_ssl_features: Local SSL features tensor of shape (B, T, C)
@@ -343,7 +346,7 @@ class LinaCodecModel(nn.Module):
 
     # ======== Inference methods ========
 
-    def weights_to_save(self, *, include_modules: list[str]) -> dict[str, torch.Tensor]:
+    def weights_to_save(self, *, include_modules: List[str]) -> Dict[str, torch.Tensor]:
         """Get model weights for saving. Excludes certain modules not needed for inference."""
         excluded_modules = [
             m
@@ -374,10 +377,10 @@ class LinaCodecModel(nn.Module):
     @classmethod
     def from_pretrained(
         cls,
-        repo_id: str | None = None,
-        revision: str | None = None,
-        config_path: str | None = None,
-        weights_path: str | None = None,
+        repo_id: Optional[str] = None,
+        revision: Optional[str] = None,
+        config_path: Optional[str] = None,
+        weights_path: Optional[str] = None,
     ) -> "KanadeModel":
         """Load LinaCodec either from HuggingFace Hub or local config and weights files.
         Args:
@@ -421,7 +424,7 @@ class LinaCodecModel(nn.Module):
             return_content (bool): Whether to extract content features.
             return_global (bool): Whether to extract global features.
         Returns:
-            dict[str, torch.Tensor]: Extracted features.
+            Dict[str, torch.Tensor]: Extracted features.
         """
         audio_length = waveform.size(0)
         padding = self._calculate_waveform_padding(audio_length)
@@ -449,9 +452,9 @@ class LinaCodecModel(nn.Module):
     def decode(
         self,
         global_embedding: torch.Tensor,
-        content_token_indices: torch.Tensor | None = None,
-        content_embedding: torch.Tensor | None = None,
-        target_audio_length: int | None = None,
+        content_token_indices: Optional[torch.Tensor] = None,
+        content_embedding: Optional[torch.Tensor] = None,
+        target_audio_length: Optional[int] = None,
     ) -> torch.Tensor:
         """Synthesize audio from content and global features using LinaCodec model and Vocos.
         Args:

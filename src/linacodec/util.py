@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -16,7 +19,7 @@ def get_logger() -> logging.Logger:
     return logger
 
 
-def freeze_modules(modules: list[nn.Module] | None):
+def freeze_modules(modules: Optional[List[nn.Module]]):
     for module in modules:
         if module is not None:
             for param in module.parameters():
@@ -24,8 +27,8 @@ def freeze_modules(modules: list[nn.Module] | None):
 
 
 def _load_audio_internal(
-    path: str, frame_offset: int | None = None, num_frames: int | None = None
-) -> tuple[torch.Tensor, int]:
+    path: str, frame_offset: Optional[int] = None, num_frames: Optional[int] = None
+) -> Tuple[torch.Tensor, int]:
     # TorchAudio >= 2.9.0 removed decoding and encoding capabilities to TorchCodec.
     # See: https://github.com/pytorch/audio/issues/3902
     # waveform, sample_rate = torchaudio.load(path, frame_offset=frame_offset or 0, num_frames=num_frames or -1)

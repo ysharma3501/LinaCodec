@@ -2,13 +2,17 @@
 # https://github.com/gemelo-ai/vocos/blob/main/vocos/discriminators.py
 # https://github.com/gemelo-ai/vocos/blob/main/vocos/loss.py
 
+from __future__ import annotations
+
+from typing import List, Tuple
+
 import torch
 from einops import rearrange
 from torch import nn
 from torch.nn.utils.parametrizations import weight_norm
 
 
-def get_2d_padding(kernel_size: tuple[int, int], dilation: tuple[int, int] = (1, 1)):
+def get_2d_padding(kernel_size: Tuple[int, int], dilation: Tuple[int, int] = (1, 1)):
     return (((kernel_size[0] - 1) * dilation[0]) // 2, ((kernel_size[1] - 1) * dilation[1]) // 2)
 
 
@@ -17,9 +21,9 @@ class SpectrogramDiscriminator(nn.Module):
         self,
         frequency_bins: int,
         channels: int = 32,
-        kernel_size: tuple[int, int] = (3, 3),
-        dilation: list[int] = [1, 2, 4],
-        bands: tuple[tuple[float, float], ...] = ((0.0, 0.2), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8), (0.8, 1.0)),
+        kernel_size: Tuple[int, int] = (3, 3),
+        dilation: List[int] = [1, 2, 4],
+        bands: Tuple[Tuple[float, float], ...] = ((0.0, 0.2), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8), (0.8, 1.0)),
         use_downsample: bool = True,
     ):
         super().__init__()
@@ -46,13 +50,13 @@ class SpectrogramDiscriminator(nn.Module):
         else:
             self.downsample = nn.Identity()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
         """
         Args:
             x (Tensor): Input spectrogram (B, C, F, T).
         Returns:
             output (Tensor): Discriminator output.
-            intermediates (list[Tensor]): List of intermediate feature maps.
+            intermediates (List[Tensor]): List of intermediate feature maps.
         """
         if x.dim() == 3:
             x = x.unsqueeze(1)

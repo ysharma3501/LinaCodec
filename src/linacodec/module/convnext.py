@@ -1,6 +1,10 @@
 # Adapted from: https://github.com/gemelo-ai/vocos/blob/main/vocos/models.py
 
 
+from __future__ import annotations
+
+from typing import Optional
+
 import torch
 from torch import nn
 
@@ -67,8 +71,8 @@ class ConvNextBackbone(nn.Module):
         dim: int,
         intermediate_dim: int,
         num_layers: int,
-        output_channels: int | None = None,
-        layer_scale_init_value: float | None = None,
+        output_channels: Optional[int] = None,
+        layer_scale_init_value: Optional[float] = None,
         skip_embed: bool = False,
     ):
         super().__init__()

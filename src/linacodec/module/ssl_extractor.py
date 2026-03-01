@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torchaudio
@@ -25,7 +29,9 @@ MODEL_REGISTRY = {
 
 
 class SSLFeatureExtractor(nn.Module):
-    def __init__(self, model_name: str = "wavlm_base_plus", output_layer: int | None = None, sample_rate: int = 16000):
+    def __init__(
+        self, model_name: str = "wavlm_base_plus", output_layer: Optional[int] = None, sample_rate: int = 16000
+    ):
         """
         Args:
             model_name: Name of the SSL model to use
@@ -59,7 +65,7 @@ class SSLFeatureExtractor(nn.Module):
         return hop_size
 
     @property
-    def conv_config(self) -> list[tuple[int, int]]:
+    def conv_config(self) -> List[Tuple[int, int]]:
         """Get the configuration of the convolutional layers in the model."""
         conv_layers = []
         for layer in self.model.feature_extractor.conv_layers:
@@ -78,10 +84,10 @@ class SSLFeatureExtractor(nn.Module):
     def forward(
         self,
         waveform: torch.Tensor,
-        lengths: torch.Tensor | None = None,
-        num_layers: int | None = None,
+        lengths: Optional[torch.Tensor] = None,
+        num_layers: Optional[int] = None,
         return_lengths: bool = False,
-    ) -> list[torch.Tensor]:
+    ) -> Union[List[torch.Tensor], Tuple[List[torch.Tensor], torch.Tensor]]:
         """
         Args:
             waveform: (batch_size, num_samples)

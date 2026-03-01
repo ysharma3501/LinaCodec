@@ -1,5 +1,9 @@
 # Finite Scalar Quantization: https://arxiv.org/abs/2309.15505
 
+from __future__ import annotations
+
+from typing import Dict, List, Tuple
+
 import torch
 from torch import nn
 
@@ -19,7 +23,7 @@ def get_entropy(prob: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
 
 
 class FSQ(nn.Module):
-    def __init__(self, levels: list[int]):
+    def __init__(self, levels: List[int]):
         super().__init__()
         self.levels = levels
         self.dim = len(levels)
@@ -80,7 +84,7 @@ class FSQ(nn.Module):
 
 
 class FiniteScalarQuantizer(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, levels: list[int]) -> None:
+    def __init__(self, input_dim: int, output_dim: int, levels: List[int]) -> None:
         super().__init__()
         self.input_dim_ = input_dim
         self.output_dim_ = output_dim
@@ -107,7 +111,7 @@ class FiniteScalarQuantizer(nn.Module):
             size *= level
         return size
 
-    def forward(self, z: torch.Tensor) -> tuple[torch.Tensor, dict]:
+    def forward(self, z: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         latent = self.proj_in(z)  # Latent projected by proj_in
         quantized_latent, indices = self.fsq(latent)  # Quantized latent before proj_out
         z_q = self.proj_out(quantized_latent)
@@ -127,7 +131,7 @@ class FiniteScalarQuantizer(nn.Module):
         }
         return z_q, info_dict
 
-    def encode(self, z: torch.Tensor, skip_proj: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+    def encode(self, z: torch.Tensor, skip_proj: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
         z = self.proj_in(z)
         z_q, indices = self.fsq.encode(z)
         if not skip_proj:

@@ -1,6 +1,10 @@
 # Adapted from: https://github.com/facebookresearch/DiT
 
 
+from __future__ import annotations
+
+from typing import Optional, Tuple
+
 import torch
 from torch import nn
 
@@ -45,7 +49,7 @@ class AdaLNZero(nn.Module):
         nn.init.zeros_(self.condition_proj[1].weight)
         nn.init.zeros_(self.condition_proj[1].bias)
 
-    def forward(self, x: torch.Tensor, condition: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor] | None:
+    def forward(self, x: torch.Tensor, condition: torch.Tensor) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """
         Args:
             x: Input tensor of shape (B, L, dim)
